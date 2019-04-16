@@ -1,0 +1,17 @@
+
+Scenario.name = AntNET
+#Scenario.ttlSeconds = 10
+
+Group.msgTtl = 60
+Group.router = AntRouter
+
+AntRouter.UPDATE_INTERVAL = 1000
+AntRouter.PRED_INC = 100
+AntRouter.PRED_DEC = 1
+
+Report.reportDir = ./reports/AntRouter_reports/
+Report.nrofReports = 2
+Report.report1 = DeliveredMessagesReport
+Report.report2 = MessageStatsReport
+
+

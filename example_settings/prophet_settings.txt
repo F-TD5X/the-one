@@ -2,6 +2,7 @@
 
 Scenario.name = PRoPHET-%%ProphetRouter.secondsInTimeUnit%%siu
 Group.router = ProphetRouter
+Group.msgTtl = 60
 
 ProphetRouter.secondsInTimeUnit = 30
 
@@ -16,3 +17,8 @@ Group1.pois = 1,0.3, 2,0.1, 3,0.1, 4, 0.1
 Group2.pois = 2,0.3, 3,0.1
 Group3.pois = 3,0.3, 2,0.1, 1,0.1, 4, 0.1
 Group4.pois = 4,0.3, 2,0.1, 3,0.1, 1, 0.1
+
+Report.reportDir = ./reports/ProphetRouter_reports/
+Report.nrofReports = 2
+Report.report1 = DeliveredMessagesReport
+Report.report2 = MessageStatsReport

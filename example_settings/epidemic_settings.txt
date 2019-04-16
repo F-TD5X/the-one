@@ -1,2 +1,8 @@
 Scenario.name = Epidemic
 Group.router = EpidemicRouter
+Group.msgTtl = 60
+
+Report.reportDir = ./reports/EpidemicRouter_reports/
+Report.nrofReports = 2
+Report.report1 = DeliveredMessagesReport
+Report.report2 = MessageStatsReport

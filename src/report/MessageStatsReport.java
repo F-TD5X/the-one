@@ -72,10 +72,12 @@ public class MessageStatsReport extends Report implements MessageListener {
 		}
 
 		if (dropped) {
-			this.nrofDropped++;
+			if (!m.getId().contains("Ant"))
+				this.nrofDropped++;
 		}
 		else {
-			this.nrofRemoved++;
+			if (!m.getId().contains("Ant"))
+				this.nrofRemoved++;
 		}
 
 		this.msgBufferTime.add(getSimTime() - m.getReceiveTime());
@@ -86,8 +88,8 @@ public class MessageStatsReport extends Report implements MessageListener {
 		if (isWarmupID(m.getId())) {
 			return;
 		}
-
-		this.nrofAborted++;
+		if (!m.getId().contains("Ant"))
+			this.nrofAborted++;
 	}
 
 
@@ -97,16 +99,18 @@ public class MessageStatsReport extends Report implements MessageListener {
 			return;
 		}
 
-		this.nrofRelayed++;
-		if (finalTarget) {
-			this.latencies.add(getSimTime() -
-				this.creationTimes.get(m.getId()) );
-			this.nrofDelivered++;
-			this.hopCounts.add(m.getHops().size() - 1);
+		if (!m.getId().contains("Ant")) {
+			this.nrofRelayed++;
+			if (finalTarget) {
+				this.latencies.add(getSimTime() -
+						this.creationTimes.get(m.getId()));
+				this.nrofDelivered++;
+				this.hopCounts.add(m.getHops().size() - 1);
 
-			if (m.isResponse()) {
-				this.rtt.add(getSimTime() -	m.getRequest().getCreationTime());
-				this.nrofResponseDelivered++;
+				if (m.isResponse()) {
+					this.rtt.add(getSimTime() - m.getRequest().getCreationTime());
+					this.nrofResponseDelivered++;
+				}
 			}
 		}
 	}
@@ -119,9 +123,11 @@ public class MessageStatsReport extends Report implements MessageListener {
 		}
 
 		this.creationTimes.put(m.getId(), getSimTime());
-		this.nrofCreated++;
-		if (m.getResponseSize() > 0) {
-			this.nrofResponseReqCreated++;
+		if (!m.getId().contains("Ant")) {
+			this.nrofCreated++;
+			if (m.getResponseSize() > 0) {
+				this.nrofResponseReqCreated++;
+			}
 		}
 	}
 
@@ -130,8 +136,8 @@ public class MessageStatsReport extends Report implements MessageListener {
 		if (isWarmupID(m.getId())) {
 			return;
 		}
-
-		this.nrofStarted++;
+		if (!m.getId().contains("Ant"))
+			this.nrofStarted++;
 	}
 
 
