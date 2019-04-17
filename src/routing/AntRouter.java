@@ -1,17 +1,19 @@
 package routing;
 
 import core.*;
+import routing.util.RoutingInfo;
 import util.Tuple;
 
 import java.util.*;
 
 public class AntRouter extends ActiveRouter {
 
-    public static final String ANT_NS = "AntRouter";
+    private static final String ANT_NS = "AntRouter";
 
-    public static double UPDATE_INTERVAL;               // Update Interval
-    public static double PRED_INC;                      // prediction increased value per times.
-    public static double PRED_DEC;                      // prediction decreased value pre times.
+    private static double UPDATE_INTERVAL;               // Update Interval
+    private static double PRED_INC;                      // prediction increased value per times.
+    private static double PRED_DEC;                      // prediction decreased value pre times.
+    private static double PRED_DEC_RATE;                 // prediction decreasing rate for hops.
 
     private Map<DTNHost, Double> predictions;            // Ant Router predictions table.
     private Map<DTNHost, Double> predictions_update;     // predictions update time.
@@ -36,6 +38,7 @@ public class AntRouter extends ActiveRouter {
 
         PRED_INC = ant_router_settings.getDouble("PRED_INC");
         PRED_DEC = ant_router_settings.getDouble("PRED_DEC");
+        PRED_DEC_RATE = ant_router_settings.getDouble("PRED_DEC_RATE");
     }
 
     /**
@@ -46,9 +49,9 @@ public class AntRouter extends ActiveRouter {
     private AntRouter(AntRouter r) {
         super(r);
 
-        this.predictions = new HashMap<>(r.predictions);
-        this.known_host = new ArrayList<>(r.known_host);
-        this.predictions_update = new HashMap<>(r.predictions_update);
+        this.predictions = new HashMap<>();
+        this.known_host = new ArrayList<>();
+        this.predictions_update = new HashMap<>();
     }
 
 
@@ -76,12 +79,25 @@ public class AntRouter extends ActiveRouter {
 
         // If Ant Packet, update predictions
         if (msg.getId().contains("Ant")) {
+
+            // Direct from is updated for PRED_INC
             if (predictions.containsKey(from)) {
                 predictions.put(from, predictions.get(from) + PRED_INC);
                 predictions_update.put(from, SimClock.getTime());
             } else {
-                predictions.put(from, 0.0);
+                predictions.put(from, PRED_INC);
                 predictions_update.put(from, SimClock.getTime());
+            }
+
+            // Predictions will decrease for hops
+            DTNHost host = msg.getFrom();
+            int HopCount = msg.getHopCount();
+            if (predictions.containsKey(host)) {
+                predictions.put(host, predictions.get(host) + PRED_INC * Math.pow(PRED_DEC_RATE, HopCount - 1));
+                predictions_update.put(host, SimClock.getTime());
+            } else {
+                predictions.put(host, PRED_INC * Math.pow(PRED_DEC_RATE, HopCount - 1));
+                predictions_update.put(host, SimClock.getTime());
             }
 
             // If ECHO, send Reply
@@ -90,6 +106,7 @@ public class AntRouter extends ActiveRouter {
                 createNewMessage(return_msg);
             }
         }
+
         return super.receiveMessage(msg, from);
     }
 
@@ -100,10 +117,28 @@ public class AntRouter extends ActiveRouter {
      */
     @Override
     public void changedConnection(Connection conn) {
+        super.changedConnection(conn);
+
         if (conn.isUp()) {
             DTNHost other_host = conn.getOtherNode(getHost());
             updateKnownHost(other_host);
         }
+    }
+
+    @Override
+    public RoutingInfo getRoutingInfo() {
+        RoutingInfo top = super.getRoutingInfo();
+        RoutingInfo ret = new RoutingInfo(predictions.size() + " delivery prediction(s)");
+
+        for (Map.Entry<DTNHost, Double> entry : predictions.entrySet()) {
+            DTNHost host = entry.getKey();
+            double preds = entry.getValue();
+
+            ret.addMoreInfo(new RoutingInfo(String.format("%s : %.6f", host, preds)));
+        }
+
+        top.addMoreInfo(ret);
+        return top;
     }
 
     /**
@@ -113,29 +148,32 @@ public class AntRouter extends ActiveRouter {
     private void updateAntTable() {
 
         double now_time = SimClock.getTime();
-        if ((now_time - last_update_time) / UPDATE_INTERVAL - 1 >= 5) {
+        if ((now_time - last_update_time) / UPDATE_INTERVAL - 1 >= 0) {
+
             for (DTNHost host : known_host) {
                 if (predictions_update.containsKey(host)) {
-                    if (now_time - predictions_update.get(host) - UPDATE_INTERVAL > 0) {
-                        Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 2);
+                    double update_time = predictions_update.get(host);
+                    double pred = predictions.get(host);
+
+                    if (pred - PRED_DEC > 0)
+                        predictions.put(host, pred - PRED_DEC);
+                    else
+                        predictions.put(host, 0.0);
+
+                    if (now_time - update_time - UPDATE_INTERVAL > 0) {
+                        Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 1);
                         createNewMessage(msg);
                         predictions_update.put(host, now_time);
                     }
                 } else {
-                    Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 2);
+                    Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 1);
                     createNewMessage(msg);
-                    predictions_update.put(host, now_time);
                 }
             }
+
             last_update_time = now_time;
         }
 
-        for (Map.Entry<DTNHost, Double> entry : predictions.entrySet()) {
-            if (entry.getValue() - PRED_DEC > 0)
-                entry.setValue(entry.getValue() - PRED_DEC);
-            else
-                entry.setValue(0.0);
-        }
     }
 
     /**
@@ -177,7 +215,7 @@ public class AntRouter extends ActiveRouter {
         }
         if (messages.size() == 0) return null;
 
-        Collections.sort(messages, new TupleComparator());
+        messages.sort(new TupleComparator());
 
         // try to send messages
         return tryMessagesForConnected(messages);
