@@ -161,12 +161,12 @@ public class AntRouter extends ActiveRouter {
                         predictions.put(host, 0.0);
 
                     if (now_time - update_time - UPDATE_INTERVAL > 0) {
-                        Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 1);
+                        Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 512);
                         createNewMessage(msg);
                         predictions_update.put(host, now_time);
                     }
                 } else {
-                    Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 1);
+                    Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 512);
                     createNewMessage(msg);
                 }
             }
