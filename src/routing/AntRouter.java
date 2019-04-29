@@ -161,12 +161,12 @@ public class AntRouter extends ActiveRouter {
                         predictions.put(host, 0.0);
 
                     if (now_time - update_time - UPDATE_INTERVAL > 0) {
-                        Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 512);
+                        Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 64);
                         createNewMessage(msg);
                         predictions_update.put(host, now_time);
                     }
                 } else {
-                    Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 512);
+                    Message msg = new Message(getHost(), host, "Ant Echo --" + getHost() + "-" + host, 64);
                     createNewMessage(msg);
                 }
             }
@@ -223,7 +223,7 @@ public class AntRouter extends ActiveRouter {
 
 
     /**
-     * Update known host for generate ant packet.
+     * Update known host for generating ant packet.
      *
      * @param host DTNHost
      */
